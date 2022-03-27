@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import { Camera, CameraCapturedPicture } from "expo-camera";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faCircle, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faCircle, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { FlipType, manipulateAsync, SaveFormat } from "expo-image-manipulator";
 
 export default function App() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -48,47 +49,71 @@ export default function App() {
   if (hasPermission === false) {
     return <Text>No access to camera</Text>;
   }
-  console.log(selfie)
+  console.log(selfie);
   return (
     <View style={styles.container}>
       {selfie && (
         <ImageBackground style={styles.image} source={selfie}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={async () => {
-              setSelfie(null);
-            }}
-          >
-            <FontAwesomeIcon
-              icon={faXmark}
-              style={styles.buttonIcon}
-              size={80}
-            />
-          </TouchableOpacity>
+          <View style={styles.imageButtonContainer}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={async () => {
+                setSelfie(null);
+              }}
+            >
+              <FontAwesomeIcon
+                icon={faXmark}
+                style={styles.buttonIcon}
+                size={80}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={async () => {
+                setSelfie(null);
+              }}
+            >
+              <FontAwesomeIcon
+                icon={faCheck}
+                style={styles.buttonIcon}
+                size={80}
+              />
+            </TouchableOpacity>
+          </View>
         </ImageBackground>
       )}
-      {true && (
+      {!selfie && (
         <Camera
           style={styles.camera}
           type={Camera.Constants.Type.front}
           ref={cameraRef}
         >
-          <View style={styles.buttonContainer}>
-            {cameraRef.current !== null && (
-              <TouchableOpacity
-                style={styles.button}
-                onPress={async () => {
-                  let selfie = await cameraRef.current?.takePictureAsync();
-                  setSelfie(selfie || null);
-                }}
-              >
-                <FontAwesomeIcon
-                  icon={faCircle}
-                  style={styles.buttonIcon}
-                  size={80}
-                />
-              </TouchableOpacity>
-            )}
+          <View style={styles.viewfinderButtonContainer}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={async () => {
+                let selfie = await cameraRef.current?.takePictureAsync();
+                var flippedSelfie
+
+                if (selfie) {
+                  flippedSelfie = await manipulateAsync(
+                    selfie.uri,
+                    [
+                      { flip: FlipType.Horizontal },
+                    ],
+                    { compress: 1, format: SaveFormat.PNG }
+                  );
+                }
+                
+                setSelfie(flippedSelfie || null);
+              }}
+            >
+              <FontAwesomeIcon
+                icon={faCircle}
+                style={styles.buttonIcon}
+                size={80}
+              />
+            </TouchableOpacity>
           </View>
         </Camera>
       )}
@@ -128,11 +153,19 @@ const styles = StyleSheet.create({
   buttonIcon: {
     color: "#fff",
   },
-  buttonContainer: {
+  viewfinderButtonContainer: {
     flex: 1,
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "flex-end",
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  imageButtonContainer: {
+    flex: 1,
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
   },
   text: {
     flex: 1,
