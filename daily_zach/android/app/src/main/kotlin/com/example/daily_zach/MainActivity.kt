@@ -1,4 +1,4 @@
-package com.example.daily_zach
+package io.zachhuxford.dailyzach
 
 import io.flutter.embedding.android.FlutterActivity
 
